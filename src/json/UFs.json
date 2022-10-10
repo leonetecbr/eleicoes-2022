@@ -1,0 +1,142 @@
+[
+  {
+    "value": "br",
+    "label": "Brasil",
+    "second": true
+  },
+  {
+    "value": "ac",
+    "label": "Acre",
+    "second": false
+  },
+  {
+    "value": "al",
+    "label": "Alagoas",
+    "second": true
+  },
+  {
+    "value": "ap",
+    "label": "Amapá",
+    "second": false
+  },
+  {
+    "value": "am",
+    "label": "Amazonas",
+    "second": true
+  },
+  {
+    "value": "ba",
+    "label": "Bahia",
+    "second": true
+  },
+  {
+    "value": "ce",
+    "label": "Ceará",
+    "second": false
+  },
+  {
+    "value": "df",
+    "label": "Distrito Federal",
+    "second": false
+  },
+  {
+    "value": "es",
+    "label": "Espírito Santo",
+    "second": true
+  },
+  {
+    "value": "go",
+    "label": "Goiás",
+    "second": false
+  },
+  {
+    "value": "ma",
+    "label": "Maranhão",
+    "second": false
+  },
+  {
+    "value": "mt",
+    "label": "Mato Grosso",
+    "second": false
+  },
+  {
+    "value": "ms",
+    "label": "Mato Grosso do Sul",
+    "second": true
+  },
+  {
+    "value": "mg",
+    "label": "Minas Gerais",
+    "second": false
+  },
+  {
+    "value": "pa",
+    "label": "Pará",
+    "second": false
+  },
+  {
+    "value": "pb",
+    "label": "Paraíba",
+    "second": true
+  },
+  {
+    "value": "pr",
+    "label": "Paraná",
+    "second": false
+  },
+  {
+    "value": "pe",
+    "label": "Pernambuco",
+    "second": true
+  },
+  {
+    "value": "pi",
+    "label": "Piauí",
+    "second": false
+  },
+  {
+    "value": "rj",
+    "label": "Rio de Janeiro",
+    "second": false
+  },
+  {
+    "value": "rn",
+    "label": "Rio Grande do Norte",
+    "second": false
+  },
+  {
+    "value": "rs",
+    "label": "Rio Grande do Sul",
+    "second": true
+  },
+  {
+    "value": "ro",
+    "label": "Rondônia",
+    "second": true
+  },
+  {
+    "value": "rr",
+    "label": "Roraima",
+    "second": false
+  },
+  {
+    "value": "sc",
+    "label": "Santa Catarina",
+    "second": true
+  },
+  {
+    "value": "sp",
+    "label": "São Paulo",
+    "second": true
+  },
+  {
+    "value": "se",
+    "label": "Sergipe",
+    "second": true
+  },
+  {
+    "value": "to",
+    "label": "Tocantins",
+    "second": false
+  }
+]
