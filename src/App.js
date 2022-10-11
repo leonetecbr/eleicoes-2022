@@ -21,24 +21,32 @@ import NoAccountsIcon from '@mui/icons-material/NoAccounts'
 import ErrorIcon from '@mui/icons-material/Error'
 import SelectUF from './components/SelectUF'
 import Result from './components/Result'
-const UFs = require('./json/UFs.json')
+import { instanceOf } from 'prop-types'
+import { withCookies, Cookies } from 'react-cookie'
 
+const UFs = require('./json/UFs.json')
 const base_url = 'https://resultados.tse.jus.br/oficial/ele2022/'
 
 class App extends React.Component {
+    static propTypes = {
+        cookies: instanceOf(Cookies).isRequired
+    }
+
     constructor(props) {
         super(props)
         this.state = {
             turno: '544',
             cargo: '1',
-            uf: UFs[0].value,
+            uf: 'br',
             isLoaded: false,
             error: false,
             data: [],
+            select: false,
         }
 
         this.handleChangeTurno = this.handleChangeTurno.bind(this)
         this.handleChangeCargo = this.handleChangeCargo.bind(this)
+        this.handleClickChangeUF = this.handleClickChangeUF.bind(this)
     }
 
     fetchData() {
@@ -91,8 +99,23 @@ class App extends React.Component {
         }
 
         if (newValue === '1') state.uf = 'br'
+        else{
+            const { cookies } = this.props
+            if (cookies.get('uf') !== undefined) state.uf = cookies.get('uf')
+            else state.select = true
+        }
 
         this.setState(state)
+    }
+
+    handleClickChangeUF(){
+        const {cargo, uf, select} = this.state
+
+        if (cargo === '3' && uf !== 'br') {
+            this.setState({
+                select: !select,
+            })
+        }
     }
 
     load() {
@@ -100,7 +123,6 @@ class App extends React.Component {
 
         if (cargo !== '3' || uf !== 'br') {
             if (!isLoaded) {
-                console.log(data, error, cargo, uf)
                 this.fetchData()
 
                 return (
@@ -116,8 +138,18 @@ class App extends React.Component {
                     </Box>
                 )
             } else if (error) {
-                return <Alert severity="warning">Esse resultado ainda não está disponível!</Alert>
+                return <Alert severity="error">Não foi possível obter os resultados da eleição!</Alert>
             } else {
+                const Md = () => {
+                    if (data.md !== 'N' && data.cand[0].st === ''){
+                        return (
+                            <Alert severity="success" className="mb-4">
+                                Eleição matematicamente definida: {(data.md === 'S') ? 'Segundo turno' : 'Candidato eleito'}
+                            </Alert>
+                        )
+                    }
+                }
+
                 return (
                     <Box>
                         <Typography variant="h5">
@@ -126,7 +158,7 @@ class App extends React.Component {
                         <LinearProgress variant="determinate" value={parseFloat(data.pst)} className="mt-2 mb-2"/>
                         <Box className="flex justify-between flex-wrap mb-2">
                             <Typography variant="body1" color="text.secondary">
-                                Última atualização em {data.dt} {data.ht}
+                                Última atualização em {data.dg} {data.hg}
                             </Typography>
                         </Box>
                         <Box className="mb-3 columns-3xs mx-auto">
@@ -177,6 +209,7 @@ class App extends React.Component {
                                 </ListItem>
                             </List>
                         </Box>
+                        <Md/>
                         <Result candidates={data.cand}/>
                     </Box>
                 )
@@ -185,9 +218,13 @@ class App extends React.Component {
     }
 
     render() {
-        const {turno, cargo, uf} = this.state
+        const {turno, cargo, uf, select} = this.state
         const Load = this.load()
-        const setUf = uf => this.setState({isLoaded: false, uf})
+        const setUf = uf => {
+            this.props.cookies.set('uf', uf, { path: '/' })
+            this.setState({isLoaded: false, select: false, uf})
+        }
+        const governadorText = 'Governador' + ((uf !== 'br') ? ' - ' + uf.toUpperCase() : '')
 
         return (
             <Container component="main">
@@ -196,43 +233,39 @@ class App extends React.Component {
                     <Box className="border-b border-gray-300">
                         <TabList onChange={this.handleChangeTurno} aria-label="Turnos da eleição">
                             <Tab label="1º Turno" value="544"/>
-                            <Tab label="2º Turno" value="546"/>
+                            <Tab label="2º Turno" value="545"/>
                         </TabList>
                     </Box>
                     <TabPanel value="544" sx={{padding: 1}}>
                         <TabContext value={cargo}>
                             <Box className="border-b border-gray-300">
-                                <TabList onChange={this.handleChangeCargo} aria-label="Turnos da eleição">
+                                <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
                                     <Tab label="Presidente" value="1"/>
-                                    <Tab label={'Governador' + ((uf !== 'br') ? ' - ' + uf.toUpperCase() : '')} value="3"/>
+                                    <Tab label={governadorText} value="3" onClick={this.handleClickChangeUF}/>
                                 </TabList>
                             </Box>
                             <TabPanel value="1" sx={{padding: 1}}>
                                 {Load}
                             </TabPanel>
                             <TabPanel value="3" sx={{padding: 1}}>
-                                <Box className="text-center mt-2 mb-1">
-                                    <SelectUF uf={uf} setUf={setUf} turno={1}/>
-                                </Box>
+                                <SelectUF uf={uf} setUf={setUf} turno={1} show={select}/>
                                 {Load}
                             </TabPanel>
                         </TabContext>
                     </TabPanel>
-                    <TabPanel value="546" sx={{padding: 1}}>
+                    <TabPanel value="545" sx={{padding: 1}}>
                         <TabContext value={cargo}>
                             <Box className="border-b border-gray-300">
-                                <TabList onChange={this.handleChangeCargo} aria-label="Turnos da eleição">
+                                <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
                                     <Tab label="Presidente" value="1"/>
-                                    <Tab label="Governador" value="3"/>
+                                    <Tab label={governadorText} value="3"/>
                                 </TabList>
                             </Box>
                             <TabPanel value="1" sx={{padding: 1}}>
                                 {Load}
                             </TabPanel>
                             <TabPanel value="3" sx={{padding: 1}}>
-                                <Box className="text-center mt-2 mb-1">
-                                    <SelectUF uf={uf} setUf={setUf} turno={2}/>
-                                </Box>
+                                <SelectUF uf={uf} setUf={setUf} turno={2} show={select}/>
                                 {Load}
                             </TabPanel>
                         </TabContext>
@@ -243,4 +276,4 @@ class App extends React.Component {
     }
 }
 
-export default App
+export default withCookies(App)
