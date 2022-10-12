@@ -9,10 +9,10 @@ import {
     ListItem,
     ListItemAvatar,
     ListItemText,
-    Skeleton,
     Tab,
     Typography,
-    Alert
+    Alert,
+    Skeleton,
 } from '@mui/material'
 import {TabContext, TabList, TabPanel} from '@mui/lab'
 import PercentIcon from '@mui/icons-material/Percent'
@@ -119,98 +119,163 @@ class App extends React.Component {
     }
 
     load() {
-        let {isLoaded, data, error, cargo, uf} = this.state
+        let {isLoaded, data, error, cargo, uf, turno} = this.state
 
         if (cargo !== '3' || uf !== 'br') {
             if (!isLoaded) {
                 this.fetchData()
+            }
 
-                return (
-                    <Box className="mb-3">
-                        <Box className="flex justify-between">
-                            <Box className="flex">
-                                <Skeleton variant="circular" width={40} height={40}/>
-                                <Skeleton variant="text" className="ml-3" width={100}/>
-                            </Box>
-                            <Skeleton variant="text" width={70}/>
-                        </Box>
-                        <Skeleton variant="text" width={200}/>
-                    </Box>
-                )
-            } else if (error) {
+            if (error) {
                 return <Alert severity="error">Não foi possível obter os resultados da eleição!</Alert>
             } else {
-                const Md = () => {
-                    if (data.md !== 'N' && data.cand[0].st === ''){
-                        return (
-                            <Alert severity="success" className="mb-4">
-                                Eleição matematicamente definida: {(data.md === 'S') ? 'Segundo turno' : 'Candidato eleito'}
-                            </Alert>
-                        )
+
+                const Md = (isLoaded) ? (
+                    () => {
+                        if (data.md !== 'N' && data.cand[0].st === ''){
+                            return (
+                                <Alert severity="success" className="mb-4">
+                                    Eleição matematicamente definida: {(data.md === 'S') ? 'Segundo turno' : 'Candidato eleito'}
+                                </Alert>
+                            )
+                        }
                     }
-                }
+                ) : null
+
+                if (!isLoaded) data.cand = (turno === '544') ? [1, 2, 3, 4, 5 ] : [1, 2]
 
                 return (
                     <Box>
-                        <Typography variant="h5">
-                            {data.pst}% das seções totalizadas
-                        </Typography>
-                        <LinearProgress variant="determinate" value={parseFloat(data.pst)} className="mt-2 mb-2"/>
+                        {
+                            (isLoaded) ? (
+                                <>
+                                    <Typography variant="h5">
+                                        {data.pst}% das seções totalizadas
+                                    </Typography>
+                                    <LinearProgress variant="determinate" value={parseFloat(data.pst)} className="mt-2 mb-2"/>
+                                </>
+                            ) : (
+                                <>
+                                    <Skeleton width={300} height={32} />
+                                    <Skeleton width="100%" height={10} />
+                                </>
+                            )
+                        }
+
                         <Box className="flex justify-between flex-wrap mb-2">
-                            <Typography variant="body1" color="text.secondary">
-                                Última atualização em {data.dg} {data.hg}
-                            </Typography>
+                            {
+                                (isLoaded) ? (
+                                    <Typography variant="body1" color="text.secondary">
+                                        Última atualização em {data.dg} {data.hg}
+                                    </Typography>
+                                ) : <Skeleton width={320} height={24} />
+                            }
                         </Box>
                         <Box className="mb-3 columns-3xs mx-auto">
                             <List>
                                 <ListItem>
                                     <ListItemAvatar>
-                                        <Avatar>
-                                            <PeopleIcon/>
-                                        </Avatar>
+                                    {
+                                        (isLoaded) ? (
+                                            <Avatar>
+                                                <PeopleIcon/>
+                                            </Avatar>
+                                        ) : <Skeleton variant="circular" width={40} height={40}/>
+                                    }
                                     </ListItemAvatar>
-                                    <ListItemText
-                                        primary="Já foram contabilizados"
-                                        secondary={parseInt(data.vv).toLocaleString('pt-br') + ' votos válidos'}
-                                    />
+                                    {
+                                        (isLoaded) ? (
+                                            <ListItemText
+                                                primary="Já foram contabilizados"
+                                                secondary={parseInt(data.vv).toLocaleString('pt-br') + ' votos válidos'}
+                                            />
+                                        ) : (
+                                            <Box className="flex flex-col">
+                                                <Skeleton width={100} height={24}/>
+                                                <Skeleton width={150} height={20}/>
+                                            </Box>
+                                        )
+                                    }
                                 </ListItem>
                                 <ListItem>
                                     <ListItemAvatar>
-                                        <Avatar>
-                                            <PercentIcon/>
-                                        </Avatar>
+                                    {
+                                        (isLoaded) ? (
+                                            <Avatar>
+                                                <PercentIcon/>
+                                            </Avatar>
+                                        ) : <Skeleton variant="circular" width={40} height={40}/>
+                                    }
                                     </ListItemAvatar>
-                                    <ListItemText
-                                        primary="Cada 1%"
-                                        secondary={'São ' + parseInt(data.vv / 100).toLocaleString('pt-br') + ' votos'}
-                                    />
+                                    {
+                                        (isLoaded) ? (
+                                            <ListItemText
+                                                primary="Cada 1%"
+                                                secondary={'São ' + parseInt(data.vv / 100).toLocaleString('pt-br') + ' votos'}
+                                            />
+                                        ) : (
+                                            <Box className="flex flex-col">
+                                                <Skeleton width={100} height={24}/>
+                                                <Skeleton width={150} height={20}/>
+                                            </Box>
+                                        )
+                                    }
                                 </ListItem>
                                 <ListItem>
                                     <ListItemAvatar>
-                                        <Avatar>
-                                            <NoAccountsIcon/>
-                                        </Avatar>
+                                    {
+                                        (isLoaded) ? (
+                                            <Avatar>
+                                                <NoAccountsIcon/>
+                                            </Avatar>
+                                        ) : <Skeleton variant="circular" width={40} height={40}/>
+                                    }
                                     </ListItemAvatar>
-                                    <ListItemText
-                                        primary="Os que faltaram"
-                                        secondary={'Somam ' + parseInt(data.a).toLocaleString('pt-br') + ' pessoas'}
-                                    />
+                                    {
+                                        (isLoaded) ? (
+                                            <ListItemText
+                                                primary="Os que faltaram"
+                                                secondary={'Somam ' + parseInt(data.a).toLocaleString('pt-br') + ' pessoas'}
+                                            />
+                                        ) : (
+                                            <Box className="flex flex-col">
+                                                <Skeleton width={100} height={24}/>
+                                                <Skeleton width={150} height={20}/>
+                                            </Box>
+                                        )
+                                    }
                                 </ListItem>
                                 <ListItem>
                                     <ListItemAvatar>
-                                        <Avatar>
-                                            <ErrorIcon/>
-                                        </Avatar>
+                                    {
+                                        (isLoaded) ? (
+                                            <Avatar>
+                                                <ErrorIcon/>
+                                            </Avatar>
+                                        ) : <Skeleton variant="circular" width={40} height={40}/>
+                                    }
                                     </ListItemAvatar>
-                                    <ListItemText
-                                        primary="Brancos e nulos"
-                                        secondary={'Somam ' + (parseInt(data.tvn) + parseInt(data.vb)).toLocaleString('pt-br') + ' votos'}
-                                    />
+                                    {
+                                        (isLoaded) ? (
+                                            <ListItemText
+                                                primary="Brancos e nulos"
+                                                secondary={'Somam ' + (parseInt(data.tvn) + parseInt(data.vb)).toLocaleString('pt-br') + ' votos'}
+                                            />
+                                        ) : (
+                                            <Box className="flex flex-col">
+                                                <Skeleton width={100} height={24}/>
+                                                <Skeleton width={150} height={20}/>
+                                            </Box>
+                                        )
+                                    }
+
                                 </ListItem>
                             </List>
                         </Box>
-                        <Md/>
-                        <Result candidates={data.cand}/>
+                        {
+                            (isLoaded) ? <Md/> : ''
+                        }
+                        <Result cand={data.cand} loading={!isLoaded}/>
                     </Box>
                 )
             }
