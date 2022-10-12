@@ -1,28 +1,11 @@
 import * as React from 'react'
-import {
-    Avatar,
-    Box,
-    Container,
-    CssBaseline,
-    LinearProgress,
-    List,
-    ListItem,
-    ListItemAvatar,
-    ListItemText,
-    Tab,
-    Typography,
-    Alert,
-    Skeleton
-} from '@mui/material'
+import {Alert, Box, Container, CssBaseline, Link, Tab} from '@mui/material'
 import {TabContext, TabList, TabPanel} from '@mui/lab'
-import PercentIcon from '@mui/icons-material/Percent'
-import PeopleIcon from '@mui/icons-material/People'
-import NoAccountsIcon from '@mui/icons-material/NoAccounts'
-import ErrorIcon from '@mui/icons-material/Error'
+import {instanceOf} from 'prop-types'
+import {Cookies, withCookies} from 'react-cookie'
+import GitHubIcon from '@mui/icons-material/GitHub'
 import SelectUF from './components/SelectUF'
 import Result from './components/Result'
-import { instanceOf } from 'prop-types'
-import { withCookies, Cookies } from 'react-cookie'
 
 const UFs = require('./json/UFs.json')
 const base_url = 'https://resultados.tse.jus.br/oficial/ele2022/'
@@ -42,11 +25,23 @@ class App extends React.Component {
             error: false,
             data: [],
             select: false,
+            refreshing: false,
         }
 
         this.handleChangeTurno = this.handleChangeTurno.bind(this)
         this.handleChangeCargo = this.handleChangeCargo.bind(this)
         this.handleClickChangeUF = this.handleClickChangeUF.bind(this)
+    }
+
+    componentDidMount() {
+        this.intervalID = setInterval(() => {
+            this.setState({refreshing: true})
+            this.fetchData()
+        }, 60000)
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.intervalID)
     }
 
     fetchData() {
@@ -60,12 +55,23 @@ class App extends React.Component {
         fetch(url)
             .then(res => res.json())
             .then(
-                result => this.setState({
+                result => {
+                    this.setState({
+                        isLoaded: true,
+                        data: result,
+                    })
+
+                    if (parseFloat(result.pst.replace(',', '.')) === 100){
+                        clearInterval(this.intervalID)
+                        this.intervalID = null
+                    } else if (this.intervalID === null) this.componentDidMount()
+
+                    setTimeout(() => {
+                        if (this.state.refreshing) this.setState({refreshing: false})
+                    }, 1000)
+                }, () => this.setState({
                     isLoaded: true,
-                    data: result,
-                }), () => this.setState({
-                    isLoaded: true,
-                    error: true
+                    error: true,
                 })
             )
     }
@@ -119,7 +125,7 @@ class App extends React.Component {
     }
 
     load() {
-        let {isLoaded, data, error, cargo, uf, turno} = this.state
+        let {isLoaded, data, error, cargo, uf, turno, refreshing} = this.state
 
         if (cargo !== '3' || uf !== 'br') {
             if (!isLoaded) {
@@ -129,161 +135,15 @@ class App extends React.Component {
             if (error) {
                 return <Alert severity="error">Não foi possível obter os resultados da eleição!</Alert>
             } else {
-
-                const Md = (isLoaded) ? (
-                    () => {
-                        if (data.md !== 'N' && data.cand[0].st === ''){
-                            return (
-                                <Alert severity="success" className="mb-4">
-                                    Eleição matematicamente definida: {(data.md === 'S') ? 'Segundo turno' : 'Candidato eleito'}
-                                </Alert>
-                            )
-                        }
-                    }
-                ) : null
-
                 if (!isLoaded) data.cand = (turno === '544') ? [1, 2, 3, 4, 5 ] : [1, 2]
 
-                return (
-                    <Box>
-                        {
-                            (isLoaded) ? (
-                                <>
-                                    <Typography variant="h5">
-                                        {data.pst}% das seções totalizadas
-                                    </Typography>
-                                    <LinearProgress variant="determinate" value={parseFloat(data.pst)} className="mt-2 mb-2"/>
-                                </>
-                            ) : (
-                                <>
-                                    <Skeleton width={300} height={32} />
-                                    <Skeleton width="100%" height={10} />
-                                </>
-                            )
-                        }
-
-                        <Box className="flex justify-between flex-wrap mb-2">
-                            {
-                                (isLoaded) ? (
-                                    <Typography variant="body1" color="text.secondary">
-                                        Última atualização em {data.dg} {data.hg}
-                                    </Typography>
-                                ) : <Skeleton width={320} height={24} />
-                            }
-                        </Box>
-                        <Box className="mb-3 columns-3xs mx-auto">
-                            <List>
-                                <ListItem>
-                                    <ListItemAvatar>
-                                    {
-                                        (isLoaded) ? (
-                                            <Avatar>
-                                                <PeopleIcon/>
-                                            </Avatar>
-                                        ) : <Skeleton variant="circular" width={40} height={40}/>
-                                    }
-                                    </ListItemAvatar>
-                                    {
-                                        (isLoaded) ? (
-                                            <ListItemText
-                                                primary="Já foram contabilizados"
-                                                secondary={parseInt(data.vv).toLocaleString('pt-br') + ' votos válidos'}
-                                            />
-                                        ) : (
-                                            <Box className="flex flex-col">
-                                                <Skeleton width={100} height={24}/>
-                                                <Skeleton width={150} height={20}/>
-                                            </Box>
-                                        )
-                                    }
-                                </ListItem>
-                                <ListItem>
-                                    <ListItemAvatar>
-                                    {
-                                        (isLoaded) ? (
-                                            <Avatar>
-                                                <PercentIcon/>
-                                            </Avatar>
-                                        ) : <Skeleton variant="circular" width={40} height={40}/>
-                                    }
-                                    </ListItemAvatar>
-                                    {
-                                        (isLoaded) ? (
-                                            <ListItemText
-                                                primary="Cada 1%"
-                                                secondary={'São ' + parseInt(data.vv / 100).toLocaleString('pt-br') + ' votos'}
-                                            />
-                                        ) : (
-                                            <Box className="flex flex-col">
-                                                <Skeleton width={100} height={24}/>
-                                                <Skeleton width={150} height={20}/>
-                                            </Box>
-                                        )
-                                    }
-                                </ListItem>
-                                <ListItem>
-                                    <ListItemAvatar>
-                                    {
-                                        (isLoaded) ? (
-                                            <Avatar>
-                                                <NoAccountsIcon/>
-                                            </Avatar>
-                                        ) : <Skeleton variant="circular" width={40} height={40}/>
-                                    }
-                                    </ListItemAvatar>
-                                    {
-                                        (isLoaded) ? (
-                                            <ListItemText
-                                                primary="Os que faltaram"
-                                                secondary={'Somam ' + parseInt(data.a).toLocaleString('pt-br') + ' pessoas'}
-                                            />
-                                        ) : (
-                                            <Box className="flex flex-col">
-                                                <Skeleton width={100} height={24}/>
-                                                <Skeleton width={150} height={20}/>
-                                            </Box>
-                                        )
-                                    }
-                                </ListItem>
-                                <ListItem>
-                                    <ListItemAvatar>
-                                    {
-                                        (isLoaded) ? (
-                                            <Avatar>
-                                                <ErrorIcon/>
-                                            </Avatar>
-                                        ) : <Skeleton variant="circular" width={40} height={40}/>
-                                    }
-                                    </ListItemAvatar>
-                                    {
-                                        (isLoaded) ? (
-                                            <ListItemText
-                                                primary="Brancos e nulos"
-                                                secondary={'Somam ' + (parseInt(data.tvn) + parseInt(data.vb)).toLocaleString('pt-br') + ' votos'}
-                                            />
-                                        ) : (
-                                            <Box className="flex flex-col">
-                                                <Skeleton width={100} height={24}/>
-                                                <Skeleton width={150} height={20}/>
-                                            </Box>
-                                        )
-                                    }
-
-                                </ListItem>
-                            </List>
-                        </Box>
-                        {
-                            (isLoaded) ? <Md/> : ''
-                        }
-                        <Result cand={data.cand} loading={!isLoaded}/>
-                    </Box>
-                )
+                return <Result data={data} loading={!isLoaded} refreshing={refreshing}/>
             }
         }
     }
 
     render() {
-        const {turno, cargo, uf, select} = this.state
+        const {turno, cargo, uf, select, isLoaded} = this.state
         const Load = this.load()
         const setUf = uf => {
             this.props.cookies.set('uf', uf, { path: '/' })
@@ -292,51 +152,62 @@ class App extends React.Component {
         const governadorText = 'Governador' + ((uf !== 'br') ? ' - ' + uf.toUpperCase() : '')
 
         return (
-            <Container component="main">
-                <CssBaseline/>
-                <TabContext value={turno}>
-                    <Box className="border-b border-gray-300">
-                        <TabList onChange={this.handleChangeTurno} aria-label="Turnos da eleição">
-                            <Tab label="1º Turno" value="544"/>
-                            <Tab label="2º Turno" value="545"/>
-                        </TabList>
-                    </Box>
-                    <TabPanel value="544" className="p-1">
-                        <TabContext value={cargo}>
-                            <Box className="border-b border-gray-300">
-                                <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
-                                    <Tab label="Presidente" value="1"/>
-                                    <Tab label={governadorText} value="3" onClick={this.handleClickChangeUF}/>
-                                </TabList>
-                            </Box>
-                            <TabPanel value="1" className="p-0 pt-2">
-                                {Load}
-                            </TabPanel>
-                            <TabPanel value="3" className="p-0 pt-2">
-                                <SelectUF uf={uf} setUf={setUf} turno={1} show={select}/>
-                                {Load}
-                            </TabPanel>
-                        </TabContext>
-                    </TabPanel>
-                    <TabPanel value="545" className="p-1">
-                        <TabContext value={cargo}>
-                            <Box className="border-b border-gray-300">
-                                <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
-                                    <Tab label="Presidente" value="1"/>
-                                    <Tab label={governadorText} value="3"/>
-                                </TabList>
-                            </Box>
-                            <TabPanel value="1" className="p-0 pt-2">
-                                {Load}
-                            </TabPanel>
-                            <TabPanel value="3" className="p-0 pt-2">
-                                <SelectUF uf={uf} setUf={setUf} turno={2} show={select}/>
-                                {Load}
-                            </TabPanel>
-                        </TabContext>
-                    </TabPanel>
-                </TabContext>
-            </Container>
+            <>
+                <Container component="main">
+                    <CssBaseline/>
+                    <TabContext value={turno}>
+                        <Box className="border-b border-gray-300">
+                            <TabList onChange={this.handleChangeTurno} aria-label="Turnos da eleição">
+                                <Tab label="1º Turno" value="544"/>
+                                <Tab label="2º Turno" value="545"/>
+                            </TabList>
+                        </Box>
+                        <TabPanel value="544" className="p-1">
+                            <TabContext value={cargo}>
+                                <Box className="border-b border-gray-300">
+                                    <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
+                                        <Tab label="Presidente" value="1"/>
+                                        <Tab label={governadorText} value="3" onClick={this.handleClickChangeUF}/>
+                                    </TabList>
+                                </Box>
+                                <TabPanel value="1" className="p-0 pt-2">
+                                    {Load}
+                                </TabPanel>
+                                <TabPanel value="3" className="p-0 pt-2">
+                                    <SelectUF uf={uf} setUf={setUf} turno={1} show={select}/>
+                                    {Load}
+                                </TabPanel>
+                            </TabContext>
+                        </TabPanel>
+                        <TabPanel value="545" className="p-1">
+                            <TabContext value={cargo}>
+                                <Box className="border-b border-gray-300">
+                                    <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
+                                        <Tab label="Presidente" value="1"/>
+                                        <Tab label={governadorText} value="3"/>
+                                    </TabList>
+                                </Box>
+                                <TabPanel value="1" className="p-0 pt-2">
+                                    {Load}
+                                </TabPanel>
+                                <TabPanel value="3" className="p-0 pt-2">
+                                    <SelectUF uf={uf} setUf={setUf} turno={2} show={select}/>
+                                    {Load}
+                                </TabPanel>
+                            </TabContext>
+                        </TabPanel>
+                    </TabContext>
+                </Container>
+                {
+                    (isLoaded) ? (
+                        <Box component="footer" className="text-center p-2">
+                            <Link href="https://github.com/leonetecbr/eleicoes-2022" color="inherit">
+                                <GitHubIcon/>
+                            </Link>
+                        </Box>
+                    ) : null
+                }
+            </>
         )
     }
 }

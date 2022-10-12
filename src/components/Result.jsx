@@ -1,109 +1,177 @@
-import {Avatar, Box, LinearProgress, Typography, Chip, Skeleton} from '@mui/material'
 import * as React from 'react'
-import PropTypes from 'prop-types'
+import {
+    Alert,
+    Avatar,
+    Box,
+    LinearProgress,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemText,
+    Skeleton,
+    Typography,
+    CircularProgress
+} from '@mui/material'
+import PeopleIcon from '@mui/icons-material/People'
+import PercentIcon from '@mui/icons-material/Percent'
+import NoAccountsIcon from '@mui/icons-material/NoAccounts'
+import ErrorIcon from '@mui/icons-material/Error'
+import ResultCandidate from './ResultCandidate'
 
-export function Result(props) {
-    const {cand, loading = false} = props
+export function Result(props){
+    const {data, loading, refreshing} = props
 
-    if (!loading) cand.sort((a,b) => parseInt(a.seq) < parseInt(b.seq) ? -1 : parseInt(a.seq) > parseInt(b.seq) ? 1 : 0)
+    const Md = (loading) ? null : (
+        () => {
+            if (data.md !== 'N' && data.cand[0].st === ''){
+                return (
+                    <Alert severity="success" className="mb-4">
+                        Eleição matematicamente definida: {(data.md === 'S') ? 'Segundo turno' : 'Candidato eleito'}
+                    </Alert>
+                )
+            }
+        }
+    )
 
     return (
-        cand.map((cand, index) => {
-            let cor
-
-            if (!loading) {
-                switch (cand.st) {
-                    case 'Não eleito':
-                        cor = 'red'
-                        break
-
-                    case 'Eleito':
-                        cor = 'green'
-                        break
-
-                    case '2º turno':
-                        cor = 'yellow'
-                        break
-
-                    default:
-                        cor = 'secondary'
-                }
+        <Box>
+            {
+                (loading) ? (
+                    <>
+                        <Skeleton width={300} height={32} />
+                        <Skeleton width="100%" height={10} />
+                    </>
+                ) : (
+                    <>
+                        <Typography variant="h5">
+                            {data.pst}% das seções totalizadas
+                        </Typography>
+                        <LinearProgress variant="determinate" value={parseFloat(data.pst)} className="mt-2 mb-2"/>
+                    </>
+                )
             }
 
-            if (typeof cand.pvap === 'string') cand.pvap = parseFloat(cand.pvap.replace(',', '.'))
-
-            return (
-                <Box className="mb-4 pb-4 shadow border-b border-gray-500" key={'cand-' + index }>
-                    <Box className="flex justify-between">
-                        <Box className="flex">
+            <Box className="flex justify-between flex-wrap mb-2">
+                {
+                    (loading) ?  <Skeleton width={320} height={24} /> : (
+                        <Typography variant="body1" color="text.secondary">
+                            Última atualização em {data.dg} {data.hg}
                             {
-                                loading ? <Skeleton variant="circular" width={56} height={56} />
-                                 : (
-                                    <Avatar alt={cand.nm}
-                                            src={process.env.PUBLIC_URL + '/images/' + cand.sqcand + '.jpg'}
-                                            className="w-14 h-14"
-                                    />
+                                (refreshing) ? <CircularProgress size={15} className="ml-2" thickness={6}/> : null
+                            }
+                        </Typography>
+                    )
+                }
+            </Box>
+            <Box className="mb-3 columns-3xs mx-auto">
+                <List>
+                    <ListItem>
+                        <ListItemAvatar>
+                            {
+                                (loading) ? <Skeleton variant="circular" width={40} height={40}/> : (
+                                    <Avatar>
+                                        <PeopleIcon/>
+                                    </Avatar>
                                 )
                             }
-                            <Box className="flex flex-col ml-2">
-                                {
-                                    loading ?
-                                        <Skeleton width={135} height={24} /> :
-                                        <span dangerouslySetInnerHTML={{__html: cand.nm}}></span>
-                                }
-                                <Box className="flex items-center">
-                                    {
-                                        loading ? (
-                                            <>
-                                                <Skeleton width={39} height={32} className="mr-2"/>
-                                                <Skeleton width={59} height={24} className="mr-2"/>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Chip label={cand.n} variant="outlined" className="mr-2"/>
-                                                <Typography color={cor}>{cand.st}</Typography>
-                                            </>
-                                        )
-                                    }
-                                </Box>
-                            </Box>
-                        </Box>
-                        <Box className="flex items-end">
-                            <Box sx={{minWidth: 35}}>
-                                {
-                                    loading ? <Skeleton width={46} height={20} /> : (
-                                        <Typography variant="body2" color="text.secondary">
-                                            {cand.pvap.toLocaleString('pt-br', {minimumFractionDigits: 2})}%
-                                        </Typography>
-                                    )
-                                }
-                            </Box>
-                        </Box>
-                    </Box>
-                    <Box className="w-full mt-3">
+                        </ListItemAvatar>
                         {
-                            loading ? (
-                                <>
-                                    <Skeleton width={110} height={10} />
-                                    <Skeleton width="100%" height={10} />
-                                </>
+                            (loading) ? (
+                                <Box className="flex flex-col">
+                                    <Skeleton width={100} height={24}/>
+                                    <Skeleton width={150} height={20}/>
+                                </Box>
                             ) : (
-                                <>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {parseInt(cand.vap).toLocaleString('pt-br')} votos
-                                    </Typography>
-                                    <LinearProgress variant="determinate" value={cand.pvap} />
-                                </>
+                                <ListItemText
+                                    primary="Já foram contabilizados"
+                                    secondary={parseInt(data.vv).toLocaleString('pt-br') + ' votos válidos'}
+                                />
                             )
                         }
-                    </Box>
-                </Box>
-            )
-    }))
-}
+                    </ListItem>
+                    <ListItem>
+                        <ListItemAvatar>
+                        {
+                            (loading) ? <Skeleton variant="circular" width={40} height={40}/> : (
+                                <Avatar>
+                                    <PercentIcon/>
+                                </Avatar>
+                            )
+                        }
+                        </ListItemAvatar>
+                        {
+                            (loading) ? (
+                                <Box className="flex flex-col">
+                                    <Skeleton width={100} height={24}/>
+                                    <Skeleton width={150} height={20}/>
+                                </Box>
+                            ) : (
+                                <ListItemText
+                                    primary="Cada 1%"
+                                    secondary={'São ' + parseInt(data.vv / 100).toLocaleString('pt-br') + ' votos'}
+                                />
+                            )
+                        }
+                    </ListItem>
+                    <ListItem>
+                        <ListItemAvatar>
+                            {
+                                (loading) ? <Skeleton variant="circular" width={40} height={40}/> : (
+                                    <Avatar>
+                                        <NoAccountsIcon/>
+                                    </Avatar>
+                                )
+                            }
+                        </ListItemAvatar>
+                        {
+                            (loading) ? (
+                                <Box className="flex flex-col">
+                                    <Skeleton width={100} height={24}/>
+                                    <Skeleton width={150} height={20}/>
+                                </Box>
 
-Result.propTypes = {
-    loading: PropTypes.bool,
+                            ) : (
+                                <ListItemText
+                                    primary="Os que faltaram"
+                                    secondary={'Somam ' + parseInt(data.a).toLocaleString('pt-br') + ' pessoas'}
+                                />
+                            )
+                        }
+                    </ListItem>
+                    <ListItem>
+                        <ListItemAvatar>
+                            {
+                                (loading) ?
+                                    <Skeleton variant="circular" width={40} height={40}/> : (
+                                        <Avatar>
+                                            <ErrorIcon/>
+                                        </Avatar>
+                                    )
+                            }
+                        </ListItemAvatar>
+                        {
+                            (loading) ? (
+                                <Box className="flex flex-col">
+                                    <Skeleton width={100} height={24}/>
+                                    <Skeleton width={150} height={20}/>
+                                </Box>
+                            ) : (
+                                <ListItemText
+                                    primary="Brancos e nulos"
+                                    secondary={'Somam ' + (parseInt(data.tvn) + parseInt(data.vb)).toLocaleString('pt-br') + ' votos'}
+                                />
+                            )
+                        }
+
+                    </ListItem>
+                </List>
+            </Box>
+            {
+                (loading) ? '' : <Md/>
+            }
+            <ResultCandidate cand={data.cand} loading={loading}/>
+        </Box>
+    )
 }
 
 export default Result
