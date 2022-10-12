@@ -1,6 +1,8 @@
 import {Avatar, Box, Chip, Divider, LinearProgress, Skeleton, Typography} from '@mui/material'
 import * as React from 'react'
 
+const PARTIDO = require('../json/partido.json')
+
 export function ResultCandidate(props) {
     const {cand, loading} = props
 
@@ -47,8 +49,13 @@ export function ResultCandidate(props) {
                             <Box className="flex flex-col ml-2">
                                 {
                                     loading ?
-                                        <Skeleton width={135} height={24}/> :
-                                        <span dangerouslySetInnerHTML={{__html: cand.nm}}></span>
+                                        <Skeleton width={135} height={24}/> : (
+                                            <Box className="flex">
+                                                <Typography dangerouslySetInnerHTML={{__html: cand.nm}}/>
+                                                <Divider orientation="vertical" className="mx-2"/>
+                                                <Typography color="text.secondary">{PARTIDO[cand.n]}</Typography>
+                                            </Box>
+                                        )
                                 }
                                 <Box className="flex items-center">
                                     {
