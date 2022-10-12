@@ -12,7 +12,7 @@ import {
     Tab,
     Typography,
     Alert,
-    Skeleton,
+    Skeleton
 } from '@mui/material'
 import {TabContext, TabList, TabPanel} from '@mui/lab'
 import PercentIcon from '@mui/icons-material/Percent'
@@ -301,7 +301,7 @@ class App extends React.Component {
                             <Tab label="2º Turno" value="545"/>
                         </TabList>
                     </Box>
-                    <TabPanel value="544" sx={{padding: 1}}>
+                    <TabPanel value="544" className="p-1">
                         <TabContext value={cargo}>
                             <Box className="border-b border-gray-300">
                                 <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
@@ -309,16 +309,16 @@ class App extends React.Component {
                                     <Tab label={governadorText} value="3" onClick={this.handleClickChangeUF}/>
                                 </TabList>
                             </Box>
-                            <TabPanel value="1" sx={{padding: 1}}>
+                            <TabPanel value="1" className="p-0 pt-2">
                                 {Load}
                             </TabPanel>
-                            <TabPanel value="3" sx={{padding: 1}}>
+                            <TabPanel value="3" className="p-0 pt-2">
                                 <SelectUF uf={uf} setUf={setUf} turno={1} show={select}/>
                                 {Load}
                             </TabPanel>
                         </TabContext>
                     </TabPanel>
-                    <TabPanel value="545" sx={{padding: 1}}>
+                    <TabPanel value="545" className="p-1">
                         <TabContext value={cargo}>
                             <Box className="border-b border-gray-300">
                                 <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
@@ -326,10 +326,10 @@ class App extends React.Component {
                                     <Tab label={governadorText} value="3"/>
                                 </TabList>
                             </Box>
-                            <TabPanel value="1" sx={{padding: 1}}>
+                            <TabPanel value="1" className="p-0 pt-2">
                                 {Load}
                             </TabPanel>
-                            <TabPanel value="3" sx={{padding: 1}}>
+                            <TabPanel value="3" className="p-0 pt-2">
                                 <SelectUF uf={uf} setUf={setUf} turno={2} show={select}/>
                                 {Load}
                             </TabPanel>

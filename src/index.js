@@ -3,22 +3,39 @@ import ReactDOM from 'react-dom/client'
 import './index.css'
 import App from './App'
 import reportWebVitals from './reportWebVitals'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { ThemeProvider, createTheme, StyledEngineProvider } from '@mui/material/styles'
 import { CookiesProvider } from 'react-cookie'
-const darkTheme = createTheme({
+
+const rootElement = document.getElementById('root')
+const root =  ReactDOM.createRoot(rootElement)
+
+const theme = createTheme({
+    components: {
+        MuiPopover: {
+            defaultProps: {
+                container: rootElement,
+            },
+        },
+        MuiPopper: {
+            defaultProps: {
+                container: rootElement,
+            },
+        },
+    },
     palette: {
         mode: 'dark',
     },
-});
+})
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-      <ThemeProvider theme={darkTheme}>
-          <CookiesProvider>
-              <App />
-          </CookiesProvider>
-      </ThemeProvider>
+      <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={theme}>
+              <CookiesProvider>
+                  <App />
+              </CookiesProvider>
+          </ThemeProvider>
+      </StyledEngineProvider>
   </React.StrictMode>
 );
 

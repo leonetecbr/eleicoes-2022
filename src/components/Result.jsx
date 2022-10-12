@@ -41,7 +41,7 @@ export function Result(props) {
                                  : (
                                     <Avatar alt={cand.nm}
                                             src={process.env.PUBLIC_URL + '/images/' + cand.sqcand + '.jpg'}
-                                            sx={{ width: 56, height: 56 }}
+                                            className="w-14 h-14"
                                     />
                                 )
                             }
