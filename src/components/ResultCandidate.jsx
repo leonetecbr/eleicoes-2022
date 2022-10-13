@@ -41,7 +41,7 @@ export function ResultCandidate(props) {
                                 loading ? <Skeleton variant="circular" width={56} height={56}/>
                                     : (
                                         <Avatar alt={cand.nm}
-                                                src={process.env.PUBLIC_URL + '/images/' + cand.sqcand + '.jpg'}
+                                                src={process.env.PUBLIC_URL + '/images/' + cand.sqcand + '.webp'}
                                                 className="w-14 h-14"
                                         />
                                     )
