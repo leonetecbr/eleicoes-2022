@@ -34,14 +34,18 @@ class App extends React.Component {
     }
 
     componentDidMount() {
-        this.intervalID = setInterval(() => {
-            this.setState({refreshing: true})
-            this.fetchData()
-        }, 60000)
+        this.createInterval()
     }
 
     componentWillUnmount() {
         clearInterval(this.intervalID)
+    }
+
+    createInterval() {
+        this.intervalID = setInterval(() => {
+            this.setState({refreshing: true})
+            this.fetchData()
+        }, 60000)
     }
 
     fetchData() {
@@ -61,10 +65,10 @@ class App extends React.Component {
                         data: result,
                     })
 
-                    if (parseFloat(result.pst.replace(',', '.')) === 100){
+                    if (parseFloat(result.pst.replace(',', '.')) === 100) {
                         clearInterval(this.intervalID)
                         this.intervalID = null
-                    } else if (this.intervalID === null) this.componentDidMount()
+                    } else if (this.intervalID === null) this.createInterval()
 
                     setTimeout(() => {
                         if (this.state.refreshing) this.setState({refreshing: false})
@@ -83,15 +87,24 @@ class App extends React.Component {
             error: false,
         }
 
-        const uf = this.state.uf
+        const {uf, select, cargo} = this.state
+        const {cookies} = this.props
 
-        if (newValue === '546') {
+        // Se for mudado para o segundo turno
+        if (newValue === '545') {
+            // Verifica se a UF selecionada tem segundo turno, se não tiver, seta a UF para Brasil e mostra o select de UF
             for (let i = 0; i < UFs.length; i++) {
                 if (UFs[i].value === uf && !UFs[i].second) {
-                    state.uf = UFs[0].value
+                    state.uf = 'br'
+                    state.select = true
                     break
                 }
             }
+        }
+        // Se for mudado para o primeiro turno, já houver uma UF salva nos cookies e o cargo não for o de presidente, seta a UF para o valor salvo e esconde o select
+        else if (cookies.get('uf') && cargo !== '1') {
+            state.uf = cookies.get('uf')
+            if (select) state.select = false
         }
 
         this.setState(state)
@@ -104,10 +117,34 @@ class App extends React.Component {
             error: false,
         }
 
+        const { turno } = this.state
+
+        // Se o cargo foi alterado para presidente, a UF é definida para Brasil
         if (newValue === '1') state.uf = 'br'
         else{
             const { cookies } = this.props
-            if (cookies.get('uf') !== undefined) state.uf = cookies.get('uf')
+
+            // Se já existir uma UF salva nos cookies
+            if (cookies.get('uf')){
+                // Se for o primeiro turno é setado a uf do cookie
+                if (turno === '544') state.uf = cookies.get('uf')
+                // Se for o segundo turno é setado a uf do cookie se ela tiver segundo turno
+                else{
+                    for (let i = 0; i < UFs.length; i++) {
+                        if (UFs[i].value === cookies.get('uf') && UFs[i].second) {
+                            state.uf = cookies.get('uf')
+                            break
+                        }
+                    }
+                }
+
+                // Se a UF não tiver segundo turno, é setado a UF para Brasil e o select de UF é ativado
+                if (state.uf === undefined){
+                    state.uf = 'br'
+                    state.select = true
+                }
+            }
+            // Se não existir uma UF salva nos cookies, o select de UF é ativado
             else state.select = true
         }
 
@@ -149,7 +186,7 @@ class App extends React.Component {
             this.props.cookies.set('uf', uf, { path: '/' })
             this.setState({isLoaded: false, select: false, uf})
         }
-        const governadorText = 'Governador' + ((uf !== 'br') ? ' - ' + uf.toUpperCase() : '')
+        const governadorText = 'Governador' + ((uf !== 'br' && cargo === '3') ? ' - ' + uf.toUpperCase() : '')
 
         return (
             <>
@@ -184,7 +221,7 @@ class App extends React.Component {
                                 <Box className="border-b border-gray-300">
                                     <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
                                         <Tab label="Presidente" value="1"/>
-                                        <Tab label={governadorText} value="3"/>
+                                        <Tab label={governadorText} value="3" onClick={this.handleClickChangeUF}/>
                                     </TabList>
                                 </Box>
                                 <TabPanel value="1" className="p-0 pt-2">
