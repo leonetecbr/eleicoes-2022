@@ -117,12 +117,12 @@ class App extends React.Component {
             error: false,
         }
 
-        const { turno } = this.state
+        const {turno} = this.state
 
         // Se o cargo foi alterado para presidente, a UF é definida para Brasil
         if (newValue === '1') state.uf = 'br'
         else{
-            const { cookies } = this.props
+            const {cookies} = this.props
 
             // Se já existir uma UF salva nos cookies
             if (cookies.get('uf')){
@@ -154,25 +154,18 @@ class App extends React.Component {
     handleClickChangeUF(){
         const {cargo, uf, select} = this.state
 
-        if (cargo === '3' && uf !== 'br') {
-            this.setState({
-                select: !select,
-            })
-        }
+        if (cargo === '3' && uf !== 'br') this.setState({select: !select,})
     }
 
     load() {
         let {isLoaded, data, error, cargo, uf, turno, refreshing} = this.state
 
         if (cargo !== '3' || uf !== 'br') {
-            if (!isLoaded) {
-                this.fetchData()
-            }
+            if (!isLoaded) this.fetchData()
 
-            if (error) {
-                return <Alert severity="error">Não foi possível obter os resultados da eleição!</Alert>
-            } else {
-                if (!isLoaded) data.cand = (turno === '544') ? [1, 2, 3, 4, 5 ] : [1, 2]
+            if (error) return <Alert severity="error">Não foi possível obter os resultados da eleição!</Alert>
+            else {
+                if (!isLoaded) data.cand = (turno === '544') ? [1, 2, 3, 4, 5] : [1, 2]
 
                 return <Result data={data} loading={!isLoaded} refreshing={refreshing}/>
             }
@@ -183,7 +176,7 @@ class App extends React.Component {
         const {turno, cargo, uf, select, isLoaded} = this.state
         const Load = this.load()
         const setUf = uf => {
-            this.props.cookies.set('uf', uf, { path: '/' })
+            this.props.cookies.set('uf', uf, {path: '/'})
             this.setState({isLoaded: false, select: false, uf})
         }
         const governadorText = 'Governador' + ((uf !== 'br' && cargo === '3') ? ' - ' + uf.toUpperCase() : '')
