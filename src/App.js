@@ -50,9 +50,9 @@ class App extends React.Component {
 
     fetchData() {
         const {turno, cargo, uf} = this.state
-        const code = (cargo === '3') ? (parseInt(turno) + 2).toString() : turno
+        const code = (cargo !== '1') ? (parseInt(turno) + 2).toString() : turno
 
-        if (cargo === '3' && uf === 'br') return true
+        if (cargo !== '1' && uf === 'br') return true
 
         const url = base_url + code + '/dados-simplificados/' + uf + '/' + uf + '-c000' + cargo + '-e000' + code + '-r.json'
 
@@ -92,12 +92,18 @@ class App extends React.Component {
 
         // Se for mudado para o segundo turno
         if (newValue === '545') {
-            // Verifica se a UF selecionada tem segundo turno, se não tiver, seta a UF para Brasil e mostra o select de UF
-            for (let i = 0; i < UFs.length; i++) {
-                if (UFs[i].value === uf && !UFs[i].second) {
-                    state.uf = 'br'
-                    state.select = true
-                    break
+            // Se estiver no cargo de senador
+            if (cargo === '5') {
+                state.cargo = '1'
+                state.uf = 'br'
+            } else {
+                // Verifica se a UF selecionada tem segundo turno, se não tiver, seta a UF para Brasil e mostra o select de UF
+                for (let i = 0; i < UFs.length; i++) {
+                    if (UFs[i].value === uf && !UFs[i].second) {
+                        state.uf = 'br'
+                        state.select = true
+                        break
+                    }
                 }
             }
         }
@@ -117,7 +123,9 @@ class App extends React.Component {
             error: false,
         }
 
-        const {turno} = this.state
+        const {turno, select} = this.state
+
+        if (select) state.select = false
 
         // Se o cargo foi alterado para presidente, a UF é definida para Brasil
         if (newValue === '1') state.uf = 'br'
@@ -151,16 +159,17 @@ class App extends React.Component {
         this.setState(state)
     }
 
-    handleClickChangeUF(){
-        const {cargo, uf, select} = this.state
+    handleClickChangeUF(event){
+        const {cargo, select} = this.state
+        const newValue = event.target.id.slice(-1)
 
-        if (cargo === '3' && uf !== 'br') this.setState({select: !select,})
+        if (newValue === cargo) this.setState({select: !select,})
     }
 
     load() {
         let {isLoaded, data, error, cargo, uf, turno, refreshing} = this.state
 
-        if (cargo !== '3' || uf !== 'br') {
+        if (cargo === '1' || uf !== 'br') {
             if (!isLoaded) this.fetchData()
 
             if (error) return <Alert severity="error">Não foi possível obter os resultados da eleição!</Alert>
@@ -179,7 +188,10 @@ class App extends React.Component {
             this.props.cookies.set('uf', uf, {path: '/'})
             this.setState({isLoaded: false, select: false, uf})
         }
+
+        const presidenteText = 'Presidente' + ((uf !== 'br' && cargo === '1') ? ' - ' + uf.toUpperCase() : '')
         const governadorText = 'Governador' + ((uf !== 'br' && cargo === '3') ? ' - ' + uf.toUpperCase() : '')
+        const senadorText = 'Senador' + ((uf !== 'br' && cargo === '5') ? ' - ' + uf.toUpperCase() : '')
 
         return (
             <>
@@ -196,15 +208,21 @@ class App extends React.Component {
                             <TabContext value={cargo}>
                                 <Box className="border-b border-gray-300">
                                     <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
-                                        <Tab label="Presidente" value="1"/>
+                                        <Tab label={presidenteText} value="1" onClick={this.handleClickChangeUF}/>
                                         <Tab label={governadorText} value="3" onClick={this.handleClickChangeUF}/>
+                                        <Tab label={senadorText} value="5" onClick={this.handleClickChangeUF}/>
                                     </TabList>
                                 </Box>
                                 <TabPanel value="1" className="p-0 pt-2">
+                                    <SelectUF uf={uf} setUf={setUf} show={select}/>
                                     {Load}
                                 </TabPanel>
                                 <TabPanel value="3" className="p-0 pt-2">
-                                    <SelectUF uf={uf} setUf={setUf} turno={1} show={select}/>
+                                    <SelectUF uf={uf} setUf={setUf} show={select}/>
+                                    {Load}
+                                </TabPanel>
+                                <TabPanel value="5" className="p-0 pt-2">
+                                    <SelectUF uf={uf} setUf={setUf} show={select}/>
                                     {Load}
                                 </TabPanel>
                             </TabContext>
@@ -213,11 +231,12 @@ class App extends React.Component {
                             <TabContext value={cargo}>
                                 <Box className="border-b border-gray-300">
                                     <TabList onChange={this.handleChangeCargo} aria-label="Cargos da eleição">
-                                        <Tab label="Presidente" value="1"/>
+                                        <Tab label={presidenteText} value="1" onClick={this.handleClickChangeUF}/>
                                         <Tab label={governadorText} value="3" onClick={this.handleClickChangeUF}/>
                                     </TabList>
                                 </Box>
                                 <TabPanel value="1" className="p-0 pt-2">
+                                    <SelectUF uf={uf} setUf={setUf} turno={2} show={select}/>
                                     {Load}
                                 </TabPanel>
                                 <TabPanel value="3" className="p-0 pt-2">

@@ -4,7 +4,9 @@ import {FormControl, FormHelperText, InputLabel, MenuItem, Select, Collapse, Box
 const UFs = require('../json/UFs.json')
 
 export function SelectUF(props) {
-    const {setUf, uf, turno, show}= props
+    let {setUf, uf, turno, show} = props
+
+    if (turno === undefined) turno = 1
 
     const handleChange = (event: SelectChangeEvent) => {
         setUf(event.target.value)

@@ -53,7 +53,7 @@ export function ResultCandidate(props) {
                                             <Box className="flex">
                                                 <Typography dangerouslySetInnerHTML={{__html: cand.nm}}/>
                                                 <Divider orientation="vertical" className="mx-2"/>
-                                                <Typography color="text.secondary">{PARTIDO[cand.n]}</Typography>
+                                                <Typography color="text.secondary">{PARTIDO[cand.n.slice(0, 2)]}</Typography>
                                             </Box>
                                         )
                                 }
