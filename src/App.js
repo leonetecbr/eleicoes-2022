@@ -185,7 +185,7 @@ class App extends React.Component {
         const {turno, cargo, uf, select, isLoaded} = this.state
         const Load = this.load()
         const setUf = uf => {
-            this.props.cookies.set('uf', uf, {path: '/'})
+            if (uf !== 'br') this.props.cookies.set('uf', uf, {path: '/'})
             this.setState({isLoaded: false, select: false, uf})
         }
 
@@ -236,7 +236,7 @@ class App extends React.Component {
                                     </TabList>
                                 </Box>
                                 <TabPanel value="1" className="p-0 pt-2">
-                                    <SelectUF uf={uf} setUf={setUf} turno={2} show={select}/>
+                                    <SelectUF uf={uf} setUf={setUf} show={select}/>
                                     {Load}
                                 </TabPanel>
                                 <TabPanel value="3" className="p-0 pt-2">

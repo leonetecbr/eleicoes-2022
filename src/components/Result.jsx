@@ -108,7 +108,7 @@ export function Result(props){
                             ) : (
                                 <ListItemText
                                     primary="Cada 1%"
-                                    secondary={'São ' + parseInt(data.vv / 100).toLocaleString('pt-br') + ' votos'}
+                                    secondary={'São ' + parseInt(data.vv / 100).toLocaleString('pt-br') + ' votos válidos'}
                                 />
                             )
                         }
