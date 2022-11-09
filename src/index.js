@@ -8,6 +8,7 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration'
 
 const rootElement = document.getElementById('root')
 const root =  ReactDOM.createRoot(rootElement)
+const mode = (window.matchMedia && !window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'
 
 const theme = createTheme({
     components: {
@@ -23,7 +24,7 @@ const theme = createTheme({
         },
     },
     palette: {
-        mode: 'dark',
+        mode,
     },
 })
 
