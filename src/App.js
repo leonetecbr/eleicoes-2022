@@ -8,7 +8,7 @@ import SelectUF from './components/SelectUF'
 import Result from './components/Result'
 
 const UFs = require('./json/UFs.json')
-const base_url = 'https://fierce-meadow-73752.herokuapp.com/https://resultados.tse.jus.br/oficial/ele2022/'
+const base_url = 'https://resultados.tse.jus.br/oficial/ele2022/'
 
 class App extends React.Component {
     static propTypes = {
