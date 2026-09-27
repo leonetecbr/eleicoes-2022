@@ -2,32 +2,28 @@
   "name": "eleicoes-2022",
   "version": "1.0.1",
   "private": true,
+  "type": "module",
   "dependencies": {
-    "@emotion/react": "^11.10.4",
-    "@emotion/styled": "^11.10.4",
-    "@mui/icons-material": "^5.10.6",
-    "@mui/lab": "^5.0.0-alpha.102",
-    "@mui/material": "^5.10.8",
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "prop-types": "^15.8.1",
-    "react": "^18.2.0",
-    "react-cookie": "^4.1.1",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4",
-    "workbox-core": "^6.5.4",
-    "workbox-expiration": "^6.5.4",
-    "workbox-precaching": "^6.5.4",
-    "workbox-routing": "^6.5.4",
-    "workbox-strategies": "^6.5.4"
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.4.0",
+    "@mui/lab": "^9.0.0-beta.9",
+    "@mui/material": "^9.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "web-vitals": "^6.2.2",
+    "zod-validation-error": "^5.0.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "npm run build && wrangler dev",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,json,css,scss}\"",
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm run format:check",
+    "fix": "npm run lint:fix && npm run format"
   },
   "eslintConfig": {
     "extends": [
@@ -48,8 +44,25 @@
     ]
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@rolldown/plugin-babel": "^0.2.3",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
+    "@vitejs/plugin-react": "^6.0.5",
     "autoprefixer": "^10.4.12",
-    "postcss": "^8.4.17",
-    "tailwindcss": "^3.1.8"
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-compiler": "^19.1.0-rc.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "eslint-plugin-tailwindcss": "^3.18.3",
+    "globals": "^17.9.0",
+    "prettier": "^3.9.6",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "tailwindcss": "^3.4.19",
+    "vite": "^8.2.1"
   }
 }

@@ -1,45 +1,43 @@
-import * as React from 'react'
-import {SelectChangeEvent} from '@mui/material/Select'
-import {FormControl, FormHelperText, InputLabel, MenuItem, Select, Collapse, Box} from '@mui/material'
-const UFs = require('../json/UFs.json')
+import UFs from '../data/UFs.json';
+import { FormControl, FormHelperText, InputLabel, MenuItem, Select, Collapse, Box } from '@mui/material';
 
 export function SelectUF(props) {
-    let {setUf, uf, turno, show} = props
+    let { setUf, uf, turno, show } = props;
 
-    if (turno === undefined) turno = 1
+    if (turno === undefined) turno = 1;
 
-    const handleChange = (event: SelectChangeEvent) => {
-        setUf(event.target.value)
-    }
+    const handleChange = event => {
+        setUf(event.target.value);
+    };
 
     return (
         <Collapse in={show} className="text-center">
-            <Box className="mt-3 mb-2">
+            <Box className="mb-2 mt-3">
                 <FormControl>
                     <InputLabel id="ufResultLabel">UF</InputLabel>
                     <Select
+                        autoWidth
                         value={uf}
+                        label="UF"
+                        variant="standard"
                         onChange={handleChange}
                         labelId="ufResultLabel"
-                        id="ufResultInput"
-                        autoWidth
-                        label="UF"
                     >
-                        {
-                            UFs.map(({label, value, second}) => {
-                                return (turno === 1 || second) ?
-                                    <MenuItem value={value} key={value}>{label}</MenuItem> :
-                                    ''
-                            })
-                        }
+                        {UFs.map(({ label, value, second }) => {
+                            return turno === 1 || second ? (
+                                <MenuItem value={value} key={value}>
+                                    {label}
+                                </MenuItem>
+                            ) : (
+                                ''
+                            );
+                        })}
                     </Select>
-                    <FormHelperText>
-                        Selecione a UF
-                    </FormHelperText>
+                    <FormHelperText>Selecione a UF</FormHelperText>
                 </FormControl>
             </Box>
         </Collapse>
-    )
+    );
 }
 
-export default SelectUF
+export default SelectUF;
