@@ -1,31 +1,77 @@
-import POLITICAL_PARTY from '../data/politicalParty.json';
-import { Avatar, Box, Chip, Divider, LinearProgress, Skeleton, Typography } from '@mui/material';
+import { useApp } from '../hooks/index.js';
+import { Alert, Avatar, Box, Chip, Divider, LinearProgress, Skeleton, Typography } from '@mui/material';
+import { useMemo } from 'react';
 
-export function ResultCandidate(props) {
-    const { cand, loading } = props;
+const votes = cand => Number(cand?.vap) || 0;
 
-    if (!loading)
-        cand.sort((a, b) => (parseInt(a.seq) < parseInt(b.seq) ? -1 : parseInt(a.seq) > parseInt(b.seq) ? 1 : 0));
+const isElected = cand => (cand?.e === 's' ? 1 : 0);
 
-    return cand.map((cand, index) => {
-        let cor;
+const normalize = (s = '') =>
+    String(s)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
+const flattenCandidates = (agr = []) =>
+    agr.flatMap(a => (a.par ?? []).flatMap(p => (p.cand ?? []).map(c => ({ ...c, par: p.sg, agr: a.nm }))));
+
+function orderCandidates(dv, candidates) {
+    if (dv === 'n') {
+        return candidates;
+    }
+
+    return [...candidates].sort((a, b) => isElected(b) - isElected(a) || votes(b) - votes(a));
+}
+
+export function ResultCandidate({ data, loading }) {
+    const { uf, getBaseUrl, POSITIONS, position, ROUNDS, round, search } = useApp();
+
+    const candidates = useMemo(
+        () =>
+            orderCandidates(data?.dv, flattenCandidates(data?.carg?.[0]?.agr)) ||
+            (round === ROUNDS.FIRST ? [1, 2, 3, 4, 5] : [1, 2]),
+        [ROUNDS.FIRST, data, round]
+    );
+
+    const searched = useMemo(() => {
+        const q = normalize(search);
+
+        if (!q) {
+            return candidates;
+        }
+
+        return candidates.filter(c => [c.nm, c.nmu, c.n, c.par].some(field => normalize(field).includes(q)));
+    }, [candidates, search]);
+
+    if (searched.length === 0) {
+        return (
+            <Alert severity="warning">
+                Nenhum candidato encontrado para a busca &ldquo;{search}&rdquo;. Tente pesquisar pelo nome, número
+                ou partido do candidato.
+            </Alert>
+        );
+    }
+
+    return searched.map((cand, index) => {
+        let color;
 
         if (!loading) {
             switch (cand.st) {
                 case 'Não eleito':
-                    cor = 'red';
+                    color = 'red';
                     break;
 
                 case 'Eleito':
-                    cor = 'green';
+                    color = 'green';
                     break;
 
                 case '2º turno':
-                    cor = 'yellow';
+                    color = 'yellow';
                     break;
 
                 default:
-                    cor = 'secondary';
+                    color = 'secondary';
             }
         }
 
@@ -36,34 +82,41 @@ export function ResultCandidate(props) {
                 <Box className="flex justify-between">
                     <Box className="flex">
                         {loading ? (
-                            <Skeleton variant="circular" width={56} height={56} />
+                            <Skeleton variant="circular" width={56} height={64} />
                         ) : (
                             <Avatar
-                                alt={cand.nm}
-                                src={import.meta.env.BASE_URL + 'images/' + cand.sqcand + '.webp'}
-                                className="size-14"
+                                alt={cand.nmu}
+                                className="h-16 w-14"
+                                src={`${getBaseUrl()}/fotos/${position === POSITIONS.PRESIDENT ? 'br' : uf}/${cand.sqcand}.jpeg`}
                             />
                         )}
                         <Box className="ml-2 flex flex-col">
-                            {loading ? (
-                                <Skeleton width={135} height={24} />
-                            ) : (
-                                <Box className="flex">
-                                    <Typography dangerouslySetInnerHTML={{ __html: cand.nm }} />
-                                    <Divider orientation="vertical" className="mx-2" />
-                                    <Typography color="text.secondary">{POLITICAL_PARTY[cand.n.slice(0, 2)]}</Typography>
-                                </Box>
-                            )}
+                            <Box className="flex">
+                                {loading ? (
+                                    <>
+                                        <Skeleton width={150} height={24} className="mr-2" />
+                                        <Skeleton width={30} height={24} />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Typography>{cand.nmu}</Typography>
+                                        <Divider orientation="vertical" className="mx-2" />
+                                        <Typography color="text.secondary" className="font-light">
+                                            {cand.par}
+                                        </Typography>
+                                    </>
+                                )}
+                            </Box>
                             <Box className="flex items-center">
                                 {loading ? (
                                     <>
                                         <Skeleton width={39} height={32} className="mr-2" />
-                                        <Skeleton width={59} height={24} className="mr-2" />
+                                        <Skeleton width={59} height={24} />
                                     </>
                                 ) : (
                                     <>
                                         <Chip label={cand.n} variant="outlined" className="mr-2" />
-                                        <Typography color={cor}>{cand.st}</Typography>
+                                        <Typography color={color}>{cand.st}</Typography>
                                     </>
                                 )}
                             </Box>
@@ -84,8 +137,8 @@ export function ResultCandidate(props) {
                 <Box className="mt-3 w-full">
                     {loading ? (
                         <>
-                            <Skeleton width={110} height={10} />
-                            <Skeleton width="100%" height={10} />
+                            <Skeleton width={110} height={20} />
+                            <Skeleton width="100%" height={4} />
                         </>
                     ) : (
                         <>

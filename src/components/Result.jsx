@@ -2,35 +2,37 @@ import {
     Alert,
     Avatar,
     Box,
+    CircularProgress,
     LinearProgress,
     List,
     ListItem,
     ListItemAvatar,
     ListItemText,
     Skeleton,
+    TextField,
     Typography,
-    CircularProgress,
 } from '@mui/material';
+import { useApp } from '../hooks';
+import ResultCandidate from './ResultCandidate';
+import ErrorIcon from '@mui/icons-material/Error';
 import PeopleIcon from '@mui/icons-material/People';
 import PercentIcon from '@mui/icons-material/Percent';
 import NoAccountsIcon from '@mui/icons-material/NoAccounts';
-import ErrorIcon from '@mui/icons-material/Error';
-import ResultCandidate from './ResultCandidate';
 
-export function Result(props) {
-    const { data, loading, refreshing } = props;
+export function Result({ data, loading, refreshing }) {
+    const { search, setSearch } = useApp();
 
     return (
         <Box>
             {loading ? (
                 <>
                     <Skeleton width={300} height={32} />
-                    <Skeleton width="100%" height={10} />
+                    <Skeleton width="100%" height={4} />
                 </>
             ) : (
                 <>
-                    <Typography variant="h5">{data.pst}% das seções totalizadas</Typography>
-                    <LinearProgress variant="determinate" value={parseFloat(data.pst)} className="my-2" />
+                    <Typography variant="h5">{data.s.pst}% das seções totalizadas</Typography>
+                    <LinearProgress variant="determinate" value={parseFloat(data.s.pst)} className="my-2" />
                 </>
             )}
 
@@ -40,9 +42,7 @@ export function Result(props) {
                 ) : (
                     <Typography variant="body1" color="text.secondary">
                         Última atualização em {data.dg} {data.hg}
-                        {
-                            refreshing && <CircularProgress size={15} className="ml-2" thickness={6} />
-                        }
+                        {refreshing && <CircularProgress size={15} className="ml-2" thickness={6} />}
                     </Typography>
                 )}
             </Box>
@@ -66,7 +66,7 @@ export function Result(props) {
                         ) : (
                             <ListItemText
                                 primary="Já foram contabilizados"
-                                secondary={parseInt(data.vv).toLocaleString('pt-br') + ' votos válidos'}
+                                secondary={parseInt(data.v.vv).toLocaleString('pt-br') + ' votos válidos'}
                             />
                         )}
                     </ListItem>
@@ -89,7 +89,7 @@ export function Result(props) {
                             <ListItemText
                                 primary="Cada 1%"
                                 secondary={
-                                    'São ' + parseInt(data.vv / 100).toLocaleString('pt-br') + ' votos válidos'
+                                    'São ' + parseInt(data.v.vv / 100).toLocaleString('pt-br') + ' votos válidos'
                                 }
                             />
                         )}
@@ -112,7 +112,7 @@ export function Result(props) {
                         ) : (
                             <ListItemText
                                 primary="Os que faltaram"
-                                secondary={'Somam ' + parseInt(data.a).toLocaleString('pt-br') + ' pessoas'}
+                                secondary={'Somam ' + parseInt(data.e.a).toLocaleString('pt-br') + ' pessoas'}
                             />
                         )}
                     </ListItem>
@@ -136,7 +136,7 @@ export function Result(props) {
                                 primary="Brancos e nulos"
                                 secondary={
                                     'Somam ' +
-                                    (parseInt(data.tvn) + parseInt(data.vb)).toLocaleString('pt-br') +
+                                    (parseInt(data.v.tvn) + parseInt(data.v.vb)).toLocaleString('pt-br') +
                                     ' votos'
                                 }
                             />
@@ -144,12 +144,20 @@ export function Result(props) {
                     </ListItem>
                 </List>
             </Box>
-            {!loading && data?.md !== 'N' && data?.cand?.[0]?.st === '' && (
+            <TextField
+                fullWidth
+                size="small"
+                className="mb-5"
+                placeholder="Buscar candidato, número ou partido"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+            />
+            {!loading && data?.md !== 'n' && data?.cand?.[0]?.st === '' && (
                 <Alert severity="success" className="mb-4">
-                    Eleição matematicamente definida: {data.md === 'S' ? 'Segundo turno' : 'Candidato eleito'}
+                    Eleição matematicamente definida: {data.md === 's' ? 'Segundo turno' : 'Candidato eleito'}
                 </Alert>
             )}
-            <ResultCandidate cand={data.cand} loading={loading} />
+            <ResultCandidate data={data} loading={loading} />
         </Box>
     );
 }

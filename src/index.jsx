@@ -1,7 +1,8 @@
+import './index.css';
+import App from './App';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App.jsx';
+import { AppProvider } from './contexts';
 import { ThemeProvider, createTheme, StyledEngineProvider } from '@mui/material/styles';
 
 const rootElement = document.getElementById('root');
@@ -30,7 +31,9 @@ root.render(
     <React.StrictMode>
         <StyledEngineProvider injectFirst>
             <ThemeProvider theme={theme}>
-                <App />
+                <AppProvider>
+                    <App />
+                </AppProvider>
             </ThemeProvider>
         </StyledEngineProvider>
     </React.StrictMode>

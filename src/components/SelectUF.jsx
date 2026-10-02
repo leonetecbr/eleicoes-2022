@@ -1,11 +1,7 @@
-import UFs from '../data/UFs.json';
+import { UFs } from '../dictonarys';
 import { FormControl, FormHelperText, InputLabel, MenuItem, Select, Collapse, Box } from '@mui/material';
 
-export function SelectUF(props) {
-    let { setUf, uf, turno, show } = props;
-
-    if (turno === undefined) turno = 1;
-
+export function SelectUF({ setUf, uf, show, turno = 1 }) {
     const handleChange = event => {
         setUf(event.target.value);
     };

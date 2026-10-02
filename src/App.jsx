@@ -1,66 +1,36 @@
+import { useApp } from './hooks';
+import Result from './components/Result';
+import SelectUF from './components/SelectUF';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import { POSITIONS, ROUNDS, UFs } from './dictonarys';
+import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, Container, CssBaseline, Link, Tab } from '@mui/material';
-import { TabContext, TabList, TabPanel } from '@mui/lab';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import SelectUF from './components/SelectUF';
-import Result from './components/Result';
-import UFs from './data/UFs.json';
 
-const CICLO_ELEITORAL = import.meta.env.VITE_CICLO_ELEITORAL || 'ele2022';
-const base_url = `https://resultados.tse.jus.br/oficial/${CICLO_ELEITORAL}/`;
-
-const TURNO = {
-    PRIMEIRO: '544',
-    SEGUNDO: '545',
-};
-
-const POSITION = {
-    PRESIDENT: '1',
-    GOVERNOR: '3',
-    SENATOR: '5',
-};
+const hasSecondRound = uf => UFs.some(u => u.value === uf && u.second);
+const deputyPosition = uf => (uf === 'df' ? POSITIONS.DISTRICT : POSITIONS.STATE);
+const isDeputy = position => position === POSITIONS.STATE || position === POSITIONS.DISTRICT;
 
 function App() {
-    const [turno, setTurno] = useState(TURNO.SEGUNDO);
-    const [cargo, setCargo] = useState(POSITION.PRESIDENT);
-    const [uf, setUf] = useState('br');
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [error, setError] = useState(false);
+    const { uf, setUf, code, round, setRound, position, setPosition, getBaseUrl } = useApp();
     const [data, setData] = useState([]);
-    const [select, setSelect] = useState(false);
+    const [error, setError] = useState(false);
+    const [showSelectUF, setShowSelectUF] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
-    const intervalID = useRef(null);
     const refreshingTimeoutID = useRef(null);
     const abortControllerRef = useRef(null);
 
-    const createInterval = useCallback(() => {
-        // TODO: Hoje desnecessário porque não há atualizações
-        // intervalID.current = setInterval(() => {
-        //     setRefreshing(true)
-        //     fetchData()
-        // }, 60000)
-    }, []);
+    // Cargos que não são presidente precisam de uma UF selecionada
+    const canFetch = position === POSITIONS.PRESIDENT || uf !== 'br';
 
     const fetchData = useCallback(() => {
-        const code = cargo !== POSITION.PRESIDENT ? (parseInt(turno) + 2).toString() : turno;
+        if (!canFetch) return;
 
-        if (cargo !== POSITION.PRESIDENT && uf === 'br') return true;
+        const url = `${getBaseUrl()}/dados/${uf}/${uf}-c${position.padStart(4, '0')}-e${code.padStart(6, '0')}-u.json`;
 
-        const url =
-            base_url +
-            code +
-            '/dados-simplificados/' +
-            uf +
-            '/' +
-            uf +
-            '-c000' +
-            cargo +
-            '-e000' +
-            code +
-            '-r.json';
-
-        if (abortControllerRef.current) abortControllerRef.current.abort();
+        abortControllerRef.current?.abort();
 
         const controller = new AbortController();
 
@@ -68,251 +38,250 @@ function App() {
 
         fetch(url, { signal: controller.signal })
             .then(res => {
-                if (!res.ok) throw new Error(`Erro ${res.status} ao buscar ${url}`);
+                if (!res.ok) {
+                    throw new Error(`Erro ${res.status} ao buscar ${url}`);
+                }
+
                 return res.json();
             })
-            .then(
-                result => {
-                    setIsLoaded(true);
-                    setError(false);
-                    setData(result);
+            .then(result => {
+                setIsLoaded(true);
+                setError(false);
+                setData(result);
 
-                    if (parseFloat(result.pst.replace(',', '.')) === 100) {
-                        if (intervalID.current) {
-                            clearInterval(intervalID.current);
-                            intervalID.current = null;
-                        }
-                    } else if (intervalID.current === null) createInterval();
+                clearTimeout(refreshingTimeoutID.current);
+                refreshingTimeoutID.current = setTimeout(() => setRefreshing(false), 1000);
+            })
+            .catch(err => {
+                // Requisição cancelada por uma mais nova: não é um erro real
+                if (err.name === 'AbortError') return;
 
-                    if (refreshingTimeoutID.current) clearTimeout(refreshingTimeoutID.current);
-                    refreshingTimeoutID.current = setTimeout(() => {
-                        setRefreshing(prevRefreshing => (prevRefreshing ? false : prevRefreshing));
-                    }, 1000);
-                },
-                err => {
-                    // Requisição cancelada por uma mais nova: não é um erro real, ignora
-                    if (err.name === 'AbortError') return;
+                setIsLoaded(true);
+                setError(true);
+                setRefreshing(false);
+            });
+    }, [canFetch, position, uf, getBaseUrl, code]);
 
-                    setIsLoaded(true);
-                    setError(true);
-                }
-            );
-    }, [turno, cargo, uf, createInterval]);
-
-    // Dispara a busca de dados quando os critérios relevantes mudam, em vez de
-    // fazer isso como efeito colateral dentro do render (via load())
+    // Busca inicial e sempre que UF, cargo ou turno mudarem
     useEffect(() => {
-        if (cargo === POSITION.PRESIDENT || uf !== 'br') {
-            if (!isLoaded) fetchData();
-        }
-    }, [cargo, uf, isLoaded, fetchData]);
+        fetchData();
 
-    // Equivalente a componentDidMount / componentWillUnmount
+        return () => abortControllerRef.current?.abort();
+    }, [fetchData]);
+
+    // Atualiza a cada 60s enquanto a apuração não terminou
     useEffect(() => {
-        createInterval();
+        if (!canFetch || data?.tf === 's') return;
 
-        return () => {
-            if (intervalID.current) clearInterval(intervalID.current);
-            if (refreshingTimeoutID.current) clearTimeout(refreshingTimeoutID.current);
-            if (abortControllerRef.current) abortControllerRef.current.abort();
-        };
-    }, [createInterval]);
+        const id = setInterval(() => {
+            setRefreshing(true);
+            fetchData();
+        }, 60000);
 
-    function handleChangeTurno(event, newValue) {
+        return () => clearInterval(id);
+    }, [canFetch, fetchData, data?.tf]);
+
+    useEffect(() => () => clearTimeout(refreshingTimeoutID.current), []);
+
+    function handleRetry() {
+        setError(false);
         setIsLoaded(false);
-        setTurno(newValue);
+        fetchData();
+    }
+
+    function handleChangeRound(event, newValue) {
+        setIsLoaded(false);
+        setRound(newValue);
         setError(false);
 
-        // Se for mudado para o segundo turno
-        if (newValue === TURNO.SEGUNDO) {
-            // Se estiver no cargo de senador
-            if (cargo === POSITION.SENATOR) {
-                setCargo(POSITION.PRESIDENT);
+        if (newValue === ROUNDS.SECOND) {
+            // O segundo turno só existe para presidente e governador
+            if (position !== POSITIONS.PRESIDENT && position !== POSITIONS.GOVERNOR) {
+                setPosition(POSITIONS.PRESIDENT);
                 setUf('br');
             } else {
-                // Verifica se a UF selecionada tem segundo turno, se não tiver, seta a UF para Brasil e mostra o select de UF
-                for (let i = 0; i < UFs.length; i++) {
-                    if (UFs[i].value === uf && !UFs[i].second) {
-                        setUf('br');
-                        setSelect(true);
-                        break;
-                    }
+                // Se a UF selecionada não tem segundo turno, volta para Brasil e mostra o select de UF
+                const current = UFs.find(u => u.value === uf);
+
+                if (current && !current.second) {
+                    setUf('br');
+                    setShowSelectUF(true);
                 }
             }
         }
-        // Se for mudado para o primeiro turno, já houver uma UF salva no local storage e o cargo não for o de presidente, seta a UF para o valor salvo e esconde o select
-        else if (localStorage.getItem('uf') && cargo !== POSITION.PRESIDENT) {
-            setUf(localStorage.getItem('uf'));
-            if (select) setSelect(false);
-        }
-    }
-
-    function handleChangeCargo(event, newValue) {
-        setIsLoaded(false);
-        setCargo(newValue);
-        setError(false);
-
-        if (select) setSelect(false);
-
-        // Se o cargo foi alterado para presidente, a UF é definida para Brasil
-        if (newValue === POSITION.PRESIDENT) setUf('br');
+        // Voltando ao primeiro turno: restaura a UF salva (se houver) e esconde o select
         else {
-            let newUf;
+            const savedUf = localStorage.getItem('uf');
 
-            // Se já existir uma UF salva no local storage
-            if (localStorage.getItem('uf')) {
-                // Se for o primeiro turno é setado a uf do local storage
-                if (turno === TURNO.PRIMEIRO) newUf = localStorage.getItem('uf');
-                // Se for o segundo turno é setado a uf do local storage se ela tiver segundo turno
-                else {
-                    for (let i = 0; i < UFs.length; i++) {
-                        if (UFs[i].value === localStorage.getItem('uf') && UFs[i].second) {
-                            newUf = localStorage.getItem('uf');
-                            break;
-                        }
-                    }
-                }
+            if (savedUf && position !== POSITIONS.PRESIDENT) {
+                setUf(savedUf);
 
-                // Se a UF não tiver segundo turno, é setado a UF para Brasil e o select de UF é ativado
-                if (newUf === undefined) {
-                    newUf = 'br';
-                    setSelect(true);
-                }
+                if (isDeputy(position)) setPosition(deputyPosition(savedUf));
+                if (showSelectUF) setShowSelectUF(false);
             }
-            // Se não existir uma UF salva no local storage, o select de UF é ativado
-            else setSelect(true);
-
-            if (newUf !== undefined) setUf(newUf);
         }
     }
 
-    // Mantido exatamente como estava (funcionando em produção) - não alterado
-    function handleClickChangeUF(event) {
-        const newValue = event.target.id.slice(-1);
-
-        if (newValue === cargo) setSelect(prevSelect => !prevSelect);
-    }
-
-    function load() {
-        if (cargo === POSITION.PRESIDENT || uf !== 'br') {
-            if (error) {
-                return (
-                    <Alert
-                        severity="error"
-                        action={
-                            <Button color="inherit" size="small" onClick={fetchData}>
-                                Tentar novamente
-                            </Button>
-                        }
-                    >
-                        Não foi possível obter os resultados da eleição!
-                    </Alert>
-                );
-            }
-
-            // enquanto os dados reais não chegam, monta um objeto auxiliar só para exibição
-            const resultData = !isLoaded
-                ? { ...data, cand: turno === TURNO.PRIMEIRO ? [1, 2, 3, 4, 5] : [1, 2] }
-                : data;
-
-            return <Result data={resultData} loading={!isLoaded} refreshing={refreshing} />;
-        }
-    }
-
-    const Load = load();
-
-    const changeUf = newUf => {
-        if (newUf !== 'br') localStorage.setItem('uf', newUf);
+    function handleChangePosition(event, newValue) {
+        setError(false);
         setIsLoaded(false);
-        setSelect(false);
-        setUf(newUf);
-    };
+        setShowSelectUF(false);
 
-    const presidenteText =
-        'Presidente' + (uf !== 'br' && cargo === POSITION.PRESIDENT ? ' - ' + uf.toUpperCase() : '');
-    const governadorText =
-        'Governador' + (uf !== 'br' && cargo === POSITION.GOVERNOR ? ' - ' + uf.toUpperCase() : '');
-    const senadorText = 'Senador' + (uf !== 'br' && cargo === POSITION.SENATOR ? ' - ' + uf.toUpperCase() : '');
+        // Presidente é sempre Brasil
+        if (newValue === POSITIONS.PRESIDENT) {
+            setPosition(newValue);
+            setUf('br');
+
+            return;
+        }
+
+        const savedUf = localStorage.getItem('uf');
+        let newUf = uf;
+
+        if (savedUf) {
+            // No segundo turno só vale a UF salva se ela tiver segundo turno
+            const valid = round === ROUNDS.FIRST || hasSecondRound(savedUf);
+
+            newUf = valid ? savedUf : 'br';
+
+            if (!valid) setShowSelectUF(true);
+        } else {
+            // Sem UF salva, o usuário precisa escolher uma
+            setShowSelectUF(true);
+        }
+
+        // Deputado estadual/distrital é sempre derivado da UF final
+        setPosition(isDeputy(newValue) ? deputyPosition(newUf) : newValue);
+        setUf(newUf);
+    }
+
+    function handleClickPosition(value) {
+        // Clicar na aba já selecionada (ou entre estadual/distrital) abre/fecha o select de UF
+        if (value === position || (isDeputy(position) && isDeputy(value))) {
+            setShowSelectUF(prevSelect => !prevSelect);
+        }
+    }
+
+    function handleChangeUf(newUf) {
+        if (newUf !== 'br') {
+            localStorage.setItem('uf', newUf);
+
+            if (isDeputy(position)) {
+                setPosition(deputyPosition(newUf));
+            }
+        }
+
+        // Só volta para o loading se a UF realmente mudou, senão nada refaz a busca
+        if (newUf !== uf) setIsLoaded(false);
+
+        setUf(newUf);
+        setShowSelectUF(false);
+    }
+
+    const showResult = position === POSITIONS.PRESIDENT || uf !== 'br';
+
+    let load = null;
+
+    if (showResult) {
+        load = error ? (
+            <Alert
+                severity="error"
+                action={
+                    <Button color="inherit" size="small" onClick={handleRetry}>
+                        Tentar novamente
+                    </Button>
+                }
+            >
+                Não foi possível obter os resultados da eleição!
+            </Alert>
+        ) : (
+            <Result data={data} loading={!isLoaded} refreshing={refreshing} />
+        );
+    }
+
+    const deputyValue = deputyPosition(uf);
+    const typeDeputy = uf === 'df' ? 'Distrital' : 'Estadual';
+    const showUF = (...positions) => uf !== 'br' && positions.includes(position);
 
     return (
         <>
             <Container component="main">
                 <CssBaseline />
-                <TabContext value={turno}>
+                <TabContext value={round}>
                     <Box className="border-b border-gray-300">
-                        <TabList onChange={handleChangeTurno} aria-label="Turnos da eleição">
-                            <Tab label="1º Turno" value={TURNO.PRIMEIRO} />
-                            <Tab label="2º Turno" value={TURNO.SEGUNDO} />
+                        <TabList onChange={handleChangeRound} aria-label="Turnos da eleição">
+                            <Tab label="1º Turno" value={ROUNDS.FIRST} />
+                            {/*<Tab label="2º Turno" value={ROUNDS.SECOND} />*/}
                         </TabList>
                     </Box>
-                    <TabPanel value={TURNO.PRIMEIRO} className="p-1">
-                        <TabContext value={cargo}>
+                    <TabPanel value={ROUNDS.FIRST} className="p-1">
+                        <TabContext value={position}>
                             <Box className="border-b border-gray-300">
-                                <TabList onChange={handleChangeCargo} aria-label="Cargos da eleição">
+                                <TabList onChange={handleChangePosition} aria-label="Cargos da eleição">
                                     <Tab
-                                        label={presidenteText}
-                                        value={POSITION.PRESIDENT}
-                                        onClick={handleClickChangeUF}
+                                        value={POSITIONS.PRESIDENT}
+                                        onClick={() => handleClickPosition(POSITIONS.PRESIDENT)}
+                                        label={`Presidente${showUF(POSITIONS.PRESIDENT) ? ` - ${uf.toUpperCase()}` : ''}`}
                                     />
                                     <Tab
-                                        label={governadorText}
-                                        value={POSITION.GOVERNOR}
-                                        onClick={handleClickChangeUF}
+                                        value={POSITIONS.GOVERNOR}
+                                        onClick={() => handleClickPosition(POSITIONS.GOVERNOR)}
+                                        label={`Governador${showUF(POSITIONS.GOVERNOR) ? ` - ${uf.toUpperCase()}` : ''}`}
                                     />
-                                    <Tab label={senadorText} value={POSITION.SENATOR} onClick={handleClickChangeUF} />
+                                    <Tab
+                                        value={POSITIONS.SENATOR}
+                                        onClick={() => handleClickPosition(POSITIONS.SENATOR)}
+                                        label={`Senador${showUF(POSITIONS.SENATOR) ? ` - ${uf.toUpperCase()}` : ''}`}
+                                    />
+                                    <Tab
+                                        value={POSITIONS.FEDERAL}
+                                        onClick={() => handleClickPosition(POSITIONS.FEDERAL)}
+                                        label={`Deputado Federal${showUF(POSITIONS.FEDERAL) ? ` - ${uf.toUpperCase()}` : ''}`}
+                                    />
+                                    <Tab
+                                        value={deputyValue}
+                                        onClick={() => handleClickPosition(deputyValue)}
+                                        label={`Deputado ${typeDeputy}${showUF(POSITIONS.STATE, POSITIONS.DISTRICT) ? ` - ${uf.toUpperCase()}` : ''}`}
+                                    />
                                 </TabList>
                             </Box>
-                            <TabPanel value={POSITION.PRESIDENT} className="p-0 pt-2">
-                                <SelectUF uf={uf} setUf={changeUf} show={select} />
-                                {Load}
-                            </TabPanel>
-                            <TabPanel value={POSITION.GOVERNOR} className="p-0 pt-2">
-                                <SelectUF uf={uf} setUf={changeUf} show={select} />
-                                {Load}
-                            </TabPanel>
-                            <TabPanel value={POSITION.SENATOR} className="p-0 pt-2">
-                                <SelectUF uf={uf} setUf={changeUf} show={select} />
-                                {Load}
+                            <TabPanel value={position} className="p-0 pt-2">
+                                <SelectUF uf={uf} setUf={handleChangeUf} show={showSelectUF} />
+                                {load}
                             </TabPanel>
                         </TabContext>
                     </TabPanel>
-                    <TabPanel value={TURNO.SEGUNDO} className="p-1">
-                        <TabContext value={cargo}>
+                    <TabPanel value={ROUNDS.SECOND} className="p-1">
+                        <TabContext value={position}>
                             <Box className="border-b border-gray-300">
-                                <TabList onChange={handleChangeCargo} aria-label="Cargos da eleição">
+                                <TabList onChange={handleChangePosition} aria-label="Cargos da eleição">
                                     <Tab
-                                        label={presidenteText}
-                                        value={POSITION.PRESIDENT}
-                                        onClick={handleClickChangeUF}
+                                        value={POSITIONS.PRESIDENT}
+                                        onClick={() => handleClickPosition(POSITIONS.PRESIDENT)}
+                                        label={`Presidente${showUF(POSITIONS.PRESIDENT) ? ` - ${uf.toUpperCase()}` : ''}`}
                                     />
                                     <Tab
-                                        label={governadorText}
-                                        value={POSITION.GOVERNOR}
-                                        onClick={handleClickChangeUF}
+                                        value={POSITIONS.GOVERNOR}
+                                        onClick={() => handleClickPosition(POSITIONS.GOVERNOR)}
+                                        label={`Governador${showUF(POSITIONS.GOVERNOR) ? ` - ${uf.toUpperCase()}` : ''}`}
                                     />
                                 </TabList>
                             </Box>
-                            <TabPanel value={POSITION.PRESIDENT} className="p-0 pt-2">
-                                <SelectUF uf={uf} setUf={changeUf} show={select} />
-                                {Load}
-                            </TabPanel>
-                            <TabPanel value={POSITION.GOVERNOR} className="p-0 pt-2">
-                                <SelectUF uf={uf} setUf={changeUf} turno={2} show={select} />
-                                {Load}
+                            <TabPanel value={position} className="p-0 pt-2">
+                                <SelectUF uf={uf} setUf={handleChangeUf} turno={2} show={showSelectUF} />
+                                {load}
                             </TabPanel>
                         </TabContext>
                     </TabPanel>
                 </TabContext>
             </Container>
-            {
-                isLoaded && (
-                    <Box component="footer" className="p-2 text-center">
-                        <Link href="https://github.com/leonetecbr/eleicoes-2022" color="inherit">
-                            <GitHubIcon />
-                        </Link>
-                    </Box>
-                )
-            }
+            {isLoaded && (
+                <Box component="footer" className="p-2 text-center">
+                    <Link href="https://github.com/leonetecbr/resultado-eleicoes" color="inherit" aria-label="GitHub">
+                        <GitHubIcon />
+                    </Link>
+                </Box>
+            )}
         </>
     );
 }

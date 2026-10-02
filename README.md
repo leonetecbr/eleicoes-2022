@@ -1,10 +1,8 @@
-# Apuração | Eleições 2022
+# Apuração | Eleições 2026
 
 ## Sobre
 
-Esse pequeno APP React foi criado para permitir o acompanhamento da apuração de votos das eleições 2022. O principal 
-diferencial será a detalhamento da porcentagem na tela inicial e a atualização automática dos dados durante a apuração
-(sem a necessidade de atualizar a página).
+Esse pequeno APP React foi criado para permitir o acompanhamento da apuração de votos das eleições 2026 em tempo real.
 
 ## Instalação
 
@@ -13,5 +11,5 @@ por fim executar o comando `npm run dev` para iniciar o servidor de desenvolvime
 
 ## API do TSE
 
-O APP utiliza a API do TSE para obter os dados. A documentação da API pode ser encontrada em: 
-https://www.tse.jus.br/eleicoes/eleicoes-2022/interessados-na-divulgacao-de-resultados-2022
+O APP utiliza a API do TSE para obter os dados. A documentação da API pode ser encontrada em:
+https://www.tse.jus.br/eleicoes/informacoes-tecnicas-sobre-a-divulgacao-de-resultados
